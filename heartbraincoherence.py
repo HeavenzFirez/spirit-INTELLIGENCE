@@ -1,9 +1,4 @@
 import time
-# The `import` statement in Python is used to bring in external modules or packages into your current
-# Python script. It allows you to use functions, classes, and variables defined in those modules
-# within your own code. When you use `import`, Python searches for the specified module in a list of
-# directories that it maintains. If the module is found, it is loaded into your script and you can
-# start using its functionality.
 import os
 import pyttsx3
 import speech_recognition as sr
@@ -20,10 +15,10 @@ import threading
 
 # Set up logging
 log_file_path = os.path.expanduser('~/central_log.json')
-logging.basicConfig(level=logging.INFO, filename=log_file_path, filemode='a', format='%(asctime)s - %(levellevel)s - %(message)s')
+logging.basicConfig(level=logging.INFO, filename=log_file_path, filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Initialize GPT-4 model and tokenizer
-model_name = "gpt2"  # Replace with "gpt-4" when available
+# Initialize GPT-2 model and tokenizer (replace with GPT-4 when available)
+model_name = "gpt2"
 gpt_model = GPT2LMHeadModel.from_pretrained(model_name)
 gpt_tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 
@@ -31,11 +26,11 @@ gpt_tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 recognizer = sr.Recognizer()
 engine = pyttsx3.init()
 
-# Initialize spacy and nltk
+# Initialize spaCy and NLTK
 nlp = spacy.load("en_core_web_sm")
 sia = SentimentIntensityAnalyzer()
 
-# Define responses
+# Define responses for user interaction
 responses = [
     "That's really cool. Tell me more!",
     "I'm intrigued. What's on your mind?",
@@ -47,7 +42,7 @@ responses = [
     "I never thought of it that way. Thanks for sharing!"
 ]
 
-# Define Node class
+# Define Node class for processing steps in the pipeline
 class Node:
     def __init__(self, name, function):
         self.name = name
@@ -57,8 +52,7 @@ class Node:
     def execute(self, data):
         if self.active:
             return self.function(data)
-        else:
-            return None
+        return None
 
     def deactivate(self):
         self.active = False
@@ -66,7 +60,7 @@ class Node:
     def activate(self):
         self.active = True
 
-# Define Pipeline class
+# Define Pipeline class to manage nodes
 class Pipeline:
     def __init__(self):
         self.nodes = []
@@ -88,34 +82,32 @@ def web_scraper(url):
 
 # Define sentiment analysis function
 def sentiment_analysis(text):
-    sentiment = sia.polarity_scores(text)
-    return sentiment
+    return sia.polarity_scores(text)
 
-# Define response generation function
+# Define response generation function using GPT-2
 def generate_response(command):
     inputs = gpt_tokenizer.encode(command, return_tensors="pt")
     attention_mask = torch.ones(inputs.shape, dtype=torch.long)
     outputs = gpt_model.generate(inputs, attention_mask=attention_mask, max_length=150, pad_token_id=gpt_tokenizer.eos_token_id, num_return_sequences=1)
-    response = gpt_tokenizer.decode(outputs[0], skip_special_tokens=True)
-    return response
+    return gpt_tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-# Initialize nodes
+# Initialize nodes for the pipeline
 scraper_node = Node("Web Scraper", web_scraper)
 sentiment_node = Node("Sentiment Analysis", sentiment_analysis)
 response_node = Node("Response Generation", generate_response)
 
-# Initialize pipeline
+# Initialize the processing pipeline
 pipeline = Pipeline()
 pipeline.add_node(scraper_node)
 pipeline.add_node(sentiment_node)
 pipeline.add_node(response_node)
 
-# Example usage
+# Example usage of the pipeline
 url = "http://example.com"
 data = pipeline.execute(url)
 print(data)
 
-# Define listen function
+# Define function to listen for audio input
 def listen():
     with sr.Microphone() as source:
         print("Listening...")
@@ -136,11 +128,11 @@ def listen():
             logging.error("WaitTimeoutError: Listening timed out")
             return ""
 
-# Define respond function
+# Define function to respond to user commands
 def respond(command):
     try:
         response = pipeline.execute(command)
-        
+
         # Log interaction
         log_entry = {
             "command": command,
@@ -148,7 +140,7 @@ def respond(command):
         }
         with open(log_file_path, 'a') as log_file:
             log_file.write(json.dumps(log_entry) + '\n')
-        
+
         engine.say(response)
         engine.runAndWait()
         print(f"GPT-4: {response}")
@@ -156,19 +148,18 @@ def respond(command):
     except Exception as e:
         logging.error(f"Error in respond function: {e}")
 
-# Define read_log function
+# Define function to read logs
 def read_log():
     try:
         with open(log_file_path, 'r') as log_file:
-            logs = log_file.readlines()
-            return logs
+            return log_file.readlines()
     except Exception as e:
         logging.error(f"Error reading log file: {e}")
         return []
 
-# Define classical music stream function
+# Define function to listen to classical music
 def listen_to_classical_music():
-    classical_music_url = "http://streaming.radio.co/s8d8f8f8f8/listen"  # Replace with actual classical music stream URL
+    classical_music_url = "http://streaming.radio.co/s8d8f8f8f8/listen"  # Replace with actual URL
     try:
         response = requests.get(classical_music_url, stream=True)
         for chunk in response.iter_content(chunk_size=1024):
@@ -192,12 +183,8 @@ resonant_thread = threading.Thread(target=resonant_chamber, args=(369,))
 resonant_thread.daemon = True
 resonant_thread.start()
 
-# Main loop with voice interaction and classical music listening
+# Main loop for voice interaction and classical music listening
 while True:
     command = listen()
     if command:
         respond(command)
-        logs = read_log()
-        print("Log entries:", logs)
-    else:
-        listen_to_classical_music()
