@@ -24,7 +24,7 @@ To get started with Spirit Angelus, follow these steps:
 Clone the Repository:
 
 bash
-git clone https://github.com/YourUsername/spirit-angelus.git
+git clone https://github.com/HeavenzFire/spirit-angelus.git
 cd spirit-angelus
 Set Up the Environment:
 
